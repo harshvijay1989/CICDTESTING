@@ -21,6 +21,7 @@ public class ContactHelper {
        ContactHelper.updateAccountOnCreateUndelete(conList);
     }
     public static void afterDelete(List<Contact> conList){
+        System.debug('Harsh Vijay');
         Set<Id> accSet = new Set<Id>();
         Map<Id,Account> accMap = new Map<Id,Account>();
         for(Contact con : conList){
