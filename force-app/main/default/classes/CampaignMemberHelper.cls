@@ -11,7 +11,7 @@ public class CampaignMemberHelper {
         Map<Id, Campaign> campMap = new Map<Id,Campaign>([Select Id,(Select Contact.AccountId from CampaignMembers) from Campaign where Id =:campaignId]);
         for (Campaign campObj : campMap.Values()){
             for (CampaignMember cpMem : campObj.CampaignMembers){
-                accId.add(cpMem.Contact.AccountId);
+                accId.add(cpMem.Contact.AccountId); 
             }
         }
         // Only those contact that are in campaign gets fetched.
