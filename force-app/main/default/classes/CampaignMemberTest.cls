@@ -9,7 +9,7 @@ public class CampaignMemberTest {
         for (Account accObj : accList){
             System.assertEquals(NumberOfContact, accObj.Number_of_campaign_members__c);
             System.assertEquals(NumberOfCampaign, accObj.Number_of_campaign__c);
-        } 
+        }  
     }
     @isTest public static void AccountContactInMultipleCampaigns(){
         Integer NumberOfCampaign = 2;
