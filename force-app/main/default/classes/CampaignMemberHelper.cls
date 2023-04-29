@@ -4,7 +4,7 @@ public class CampaignMemberHelper {
         // Done
         Set<Id> campaignId = new Set<Id>();
         for (CampaignMember campMemObj : newCampMem){
-            if(campMemObj.CampaignId != null){campaignId.add(campMemObj.CampaignId);}
+            if(campMemObj.CampaignId != null){campaignId.add(campMemObj.CampaignId);} 
         }
         // Getting All Account Ids That i Have to Update
         Set<Id> accId = new Set<Id>();
