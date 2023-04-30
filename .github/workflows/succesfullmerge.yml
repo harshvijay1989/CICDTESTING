@@ -51,4 +51,4 @@ jobs:
             
             - name: 'Deploy Delta Package'
               run: |
-                    sfdx force:source:deploy -p changed-sources/force-app --checkonly --testlevel RunLocalTests --json
+                    sfdx force:source:deploy -p changed-sources/force-app
