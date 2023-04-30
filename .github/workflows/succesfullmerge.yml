@@ -47,12 +47,8 @@ jobs:
               run: | 
                   mkdir changed-sources
                   sfdx sgd:source:delta --to "HEAD" --from "HEAD^" --output changed-sources/ --generate-delta --source force-app/
-                  ls -ltR
-
-            # Now we can use the sfdx scanner to scan the code in the delta directory
-            # The output of the scan is stored in a file called apexScanResults.sarif
-
-            # The .sarif file can later be uploaded to github, so that we can see the 
-            # results of the scan directly from the PR.
+                  ls -ltR changed-sources
             
-              
+            - name: 'Deploy Delta Package'
+              run: |
+                    sfdx force:source:deploy -p force-app --checkonly --testlevel RunLocalTests --json
