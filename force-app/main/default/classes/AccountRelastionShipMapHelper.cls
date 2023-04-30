@@ -6,7 +6,7 @@ public class AccountRelastionShipMapHelper {
             if (armObj.From_Account__c != null && armObj.Account__c != null && armObj.From_Account__c != armObj.Account__c){
                 toAccountList.add(armObj.Account__c);
                 fromAccountList.add(armObj.From_Account__c);
-            }
+            } 
         }
         if (!fromAccountList.isEmpty()){
               Map<id,List<Contact>> custMap = new Map<Id,List<Contact>>();
