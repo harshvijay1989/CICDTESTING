@@ -16,7 +16,7 @@ public class CampaignMemberHelper {
             for (CampaignMember cpMem : campObj.CampaignMembers){
                 accId.add(cpMem.Contact.AccountId);   
             }
-        }
+        }   
         // Only those contact that are in campaign gets fetched.
         // Number of Campaign Members in Account.
         if(!accId.isEmpty()){
