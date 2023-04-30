@@ -1,96 +1,93 @@
 # Unique name for this workflow
-name: Succesfull merge of Pull Request
+name: Deploy integration branch to integration and staging/uat orgs
+
+ 
 
 # Definition when the workflow should run
 on:
-  push:
-    branches: [develop]
-    paths:
-        - 'force-app/**'
+    push:
+      branches: [ develop ]
+      paths:
+        - 'force-app/**'
+
+
+ 
+
+# Jobs to be executed
 jobs:
-      runs-on: ubuntu-latest
-      steps:
-            # Now we install nodejs in the VM, and specify version 14
-          - uses: actions/setup-node@v3
-            with:
-                node-version: '14'
-          - name: 'Checkout source code'
-            uses: actions/checkout@v3
-            with:
-                fetch-depth: 0
+    deploy-branch-to-int-and-staging-orgs:
+        runs-on: ubuntu-latest
+        if: ${{ github.actor != 'dependabot[bot]' }}
+        steps:
+            # Install Salesforce CLI
+            - name: 'Install Salesforce CLI'
+              run: |
+                  wget https://developer.salesforce.com/media/salesforce-cli/sfdx/channels/stable/sfdx-linux-x64.tar.xz
+                  mkdir ~/sfdx
+                  tar xJf sfdx-linux-x64.tar.xz -C ~/sfdx --strip-components 1
+                  echo "$HOME/sfdx/bin" >> $GITHUB_PATH
+                  ~/sfdx/bin/sfdx version
 
-          - name: 'Read PR Body'
-            env:
-              PR_BODY: ${{github.event.pull_request.body}}
-              run: |
-                  echo $PR_BODY > ./pr_body.txt
-                  TESTS=$(cat ./pr_body.txt | grep "Apex::" | awk -F"[" '{print $2}' | awk -F"]" '{print $1}')
-                  echo $TESTS
-                  echo "APEX_TESTS=$TESTS" >> $GITHUB_ENV
-                  #    node ./parsePR.js              
-               #   TESTS=$(cat testsToRun.txt)       
-                  #echo "APEX_TESTS=$TESTS" >> $GITHUB_ENV
-                  
-            # Now Install Salesforce CLI
-          - name: 'Install Salesforce CLI'
-            run: |
-                  wget https://developer.salesforce.com/media/salesforce-cli/sfdx/channels/stable/sfdx-linux-x64.tar.xz
-                  mkdir ~/sfdx
-                  tar xJf sfdx-linux-x64.tar.xz -C ~/sfdx --strip-components 1
-                  echo "$HOME/sfdx/bin" >> $GITHUB_PATH
-                  ~/sfdx/bin/sfdx version
+ 
 
-          - name: 'Installing sfdx git delta'
-            run: | 
-                  echo y | sfdx plugins:install sfdx-git-delta
-                  sfdx plugins 
+            # install SFDX-Git-Delta plugin - https://github.com/scolladon/sfdx-git-delta
+            - name: 'Installing sfdx git delta'
+              run: | 
+                  echo y | sfdx plugins:install sfdx-git-delta
+                  sfdx plugins
 
-            # Install java as it is required for the next step
-          - name: 'Installing java'
-            run: |
-                sudo apt-get update
-                sudo apt install default-jdk
+ 
 
-            # Install SFDX scanner
-          - name: 'Installing SFDX scanner'
-            run: sfdx plugins:install @salesforce/sfdx-scanner
+            # Checkout the source code
+            - name: 'Checkout source code'
+              uses: actions/checkout@v3
+              with:
+                fetch-depth: 0
 
-          - name: 'Populate auth file with SFDX_URL secret of integration org'
-            shell: bash
-            run: |
-                  echo ${{ secrets.SFDX_INTEGRATION_URL}} > ./SFDX_INTEGRATION_URL.txt
+ 
 
-            # Authenticate to org using the URL stored in the text file
-          - name: 'Authenticate to Integration Org'
-            run: sfdx auth:sfdxurl:store -f ./SFDX_INTEGRATION_URL.txt -s -a integration
+            # Store secret for both otgs
+            - name: 'Populate auth file with SFDX_URL secret of the integration and staging orgs'
+              shell: bash
+              run: |
+                  echo ${{ secrets.SFDX_INTEGRATION_URL}} > ./SFDX_INTEGRATION_URL.txt
+                  echo ${{ secrets.SFDX_STAGING_URL}} > ./SFDX_STAGING_URL.txt
 
-            # We use SFDX Git Delta to create a directory with only the metadata that has changed.
-            # this allows us to deploy only those changes, as opposed to deploying the entire branch. 
-            # This helps reducing deployment times
-          - name: 'Create delta packages for new, modified or deleted metadata'
-            run: | 
-                  mkdir changed-sources
-                  sfdx sgd:source:delta --to "HEAD" --from "HEAD^" --output changed-sources/ --generate-delta --source force-app/
-                  ls -ltR
+ 
 
-            # Now we can use the sfdx scanner to scan the code in the delta directory
-            # The output of the scan is stored in a file called apexScanResults.sarif
+            - name: 'Create delta packages for new, modified or deleted metadata'
+              run: | 
+                  mkdir changed-sources
+                  sfdx sgd:source:delta --to "HEAD" --from "HEAD^" --output changed-sources/ --generate-delta --source force-app/
 
-            # The .sarif file can later be uploaded to github, so that we can see the 
-            # results of the scan directly from the PR.
+ 
 
-          - name: 'deploy delta changes - run specified tests'
-            if: ${{ env.APEX_TESTS != 'all' }}
-            run: |
-                  echo ${{env.APEX_TESTS}}
-                  sfdx force:source:deploy -p "changed-sources/force-app"  --testlevel RunSpecifiedTests --runtests ${{env.APEX_TESTS}} --verbose
+            # Authenticate to org
+            - name: 'Authenticate to Integration Org'
+              run: sfdx auth:sfdxurl:store -f ./SFDX_INTEGRATION_URL.txt -s -a integration
 
-            # If the env variable equals all, we run all tests
-          - name: 'deploy delta changes - run all tests'
-            if: ${{ env.APEX_TESTS == 'all' }}
-            run: |
-                  sfdx force:source:deploy -p "changed-sources/force-app"  --testlevel RunLocalTests --verbose
-                  #echo "running test classes"
+ 
 
-          - name: 'Deploy destructive changes (if any)'
-            run: sfdx force:mdapi:deploy -d "changed-sources/destructiveChanges" --checkonly --ignorewarnings --verbose
+            - name: 'Deploy the entire branch to Integration org'
+              run: sfdx force:source:deploy -p force-app --testlevel RunLocalTests --json
+
+ 
+
+            - name: 'Deploy destructive changes (if any) to Integration org'
+              run: sfdx force:mdapi:deploy -d "changed-sources/destructiveChanges" --checkonly --ignorewarnings
+
+ 
+
+            # Authenticate to org
+            - name: 'Authenticate to Staging Org to Staging org'
+              run: sfdx auth:sfdxurl:store -f ./SFDX_STAGING_URL.txt -s -a staging
+
+ 
+
+            - name: 'Deploy the entire branch'
+              run: sfdx force:source:deploy -p force-app --testlevel RunLocalTests --json
+
+ 
+
+            - name: 'Deploy destructive changes (if any) to Staging org'
+              run: sfdx force:mdapi:deploy -d "changed-sources/destructiveChanges" --checkonly --ignorewarnings
