@@ -5,7 +5,7 @@ public class CampaignMemberHelper {
         Set<Id> campaignId = new Set<Id>();
         for (CampaignMember campMemObj : newCampMem){
             if(campMemObj.CampaignId != null){
-                system.debug('Harsh');
+                system.debug('Harsh'); 
                 campaignId.add(campMemObj.CampaignId);
             } 
         }
