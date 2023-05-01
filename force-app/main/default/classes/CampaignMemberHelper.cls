@@ -6,7 +6,7 @@ public class CampaignMemberHelper {
         for (CampaignMember campMemObj : newCampMem){
             if(campMemObj.CampaignId != null){ 
                 system.debug('Harsh'); 
-                campaignId.add(campMemObj.CampaignId);
+                campaignId.add(campMemObj.CampaignId);   
             } 
         }
         // Getting All Account Ids That i Have to Update
