@@ -32,7 +32,7 @@ public class CampaignMemberHelper {
             //System.debug('Total Number that can be returned '+LimitQueryLocatorRows);
             Map<Id,Account> acccuMap = new Map<Id,Account>([Select Id,(Select Id From Contacts Where Id In (Select ContactId from CampaignMember)) from Account Where Id =:accId]);
             //Integer avail_1 = Limits.getLimitAggregateQueries();
-            //Integer processed_1 = Limits.getAggregateQueries();
+                                                                                        //Integer processed_1 = Limits.getAggregateQueries(); 
             //Integer Queries_1 = Limits.getQueries();
             //Integer LimitQueryLocatorRows_1 = Limits.getLimitQueryLocatorRows();
             //System.debug('Available AggregateQueries '+avail_1);
