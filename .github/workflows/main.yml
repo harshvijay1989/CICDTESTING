@@ -150,6 +150,9 @@ jobs:
               run: | 
                   mkdir changed-sources
                   sfdx sgd:source:delta --to "HEAD" --from "HEAD^" --output changed-sources/ --generate-delta --source force-app/
+                  cd changed-sources
+                  cd package
+                  cat package.xml
                   ls -ltR
 
             # Now we can use the sfdx scanner to scan the code in the delta directory
