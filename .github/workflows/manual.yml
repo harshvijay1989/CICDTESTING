@@ -3,9 +3,15 @@ name: Manual trigger
 on:
   workflow_dispatch:
     inputs:
-      name:
-        description: "Enter commit Id"
-        default: "World"
+      From Branch:
+        description: "Enter From Branch Name"
+        default: "From Branch"
+      commit_id:
+        description: "Please enter commit id"
+        default: "commit id"
+      To Branch:
+        description: "Enter To Branch Name"
+        default: "To Branch"
 
 jobs:
   commit_and_push:
