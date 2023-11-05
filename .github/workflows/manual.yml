@@ -1,0 +1,16 @@
+name: Manual trigger
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "Enter commit Id"
+        default: "World"
+
+jobs:
+  commit_and_push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Display input commit ID
+        run: echo "Hello ${{ github.event.inputs.name }}"
