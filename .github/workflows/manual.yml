@@ -14,9 +14,17 @@ on:
         default: "To Branch"
 
 jobs:
-  commit_and_push:
+  Deploying-Specified-Commits:
     runs-on: ubuntu-latest
-
+    if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
-      - name: Display input commit ID
-        run: echo "Hello ${{ github.event.inputs.name }}"
+        - uses: actions/setup-node@v3
+          with:
+            node-version: '20'
+
+        - name: 'Install Salesforce CLI'
+          run: |
+                npm install @salesforce/cli --global
+                
+        - name: 'Display input commit ID'
+          run: echo "Hello ${{ github.event.inputs.name }}"
