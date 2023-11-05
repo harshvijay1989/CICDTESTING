@@ -30,4 +30,5 @@ jobs:
           run: echo "Hello ${{ github.event.inputs.name }}"
 
         - name: 'Display salesforce cli version'
-          run: echo "Cli Version ${{sfdx --version}}"
+          run: |
+                sfdx --version
