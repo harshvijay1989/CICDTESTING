@@ -7,7 +7,7 @@ public class AccountRelastionShipMapHelper {
                 toAccountList.add(armObj.Account__c);
                 fromAccountList.add(armObj.From_Account__c);
             } 
-        }
+        }  
         if (!fromAccountList.isEmpty()){
               Map<id,List<Contact>> custMap = new Map<Id,List<Contact>>();
 			  for(Account ac:[SELECT id,name,(SELECT LastName FROM Contacts) FROM Account WHERE id =:fromAccountList] ){
