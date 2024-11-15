@@ -48,7 +48,7 @@ jobs:
 
             # Install SFDX scanner
             - name: 'Install SFDX scanner'
-              run: sfdx plugins:install @salesforce/sfdx-scanner
+              run: sf plugins install @salesforce/sfdx-scanner
 
             # Populate auth file with SFDX URL secret of integration org
             - name: 'Populate auth file with SFDX_URL secret of integration org'
