@@ -37,7 +37,7 @@ jobs:
             # Install SFDX Git Delta plugin
             - name: 'Install SFDX Git Delta'
               run: |
-                  echo y | sf plugins:install sf-git-delta
+                  echo y | sf plugins install "sfdx-git-delta@${{ vars.SGD_VERSION }}"
                   sfdx plugins
 
             # Install Java
