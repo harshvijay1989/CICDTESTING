@@ -18,6 +18,14 @@ jobs:
           ref: develop  # Checkout the develop branch regardless of the commit
           fetch-depth: 0  # Fetch the entire history to ensure we are working with the latest code
 
+      - name: 'Install Salesforce CLI'
+        run: |
+          wget https://developer.salesforce.com/media/salesforce-cli/sf/channels/stable/sf-linux-x64.tar.xz
+          mkdir -p ~/cli/sf
+          tar xJf sf-linux-x64.tar.xz -C ~/cli/sf --strip-components 1
+          echo "$HOME/cli/sf/bin" >> $GITHUB_PATH
+          ~/cli/sf/bin/sf version
+          
       - name: 'Authenticate to QA Org'
         run: sf org login sfdx-url --sfdx-url-file ./SFDX_QA_URL.txt --set-default --alias qa
 
@@ -42,7 +50,7 @@ jobs:
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
           subject: Deployment Results for develop branch
-          to: hv152272@gmail.com
+          to: recipient1@example.com,recipient2@example.com,recipient3@example.com
           from: ${{ secrets.EMAIL_USERNAME }}
           body: |
             Hello,
