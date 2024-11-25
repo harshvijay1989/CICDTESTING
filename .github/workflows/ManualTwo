@@ -1,7 +1,7 @@
 name: Validate Deployment and Email Results
 
 on:
-  workflow_dispatch: # Allows manual triggering of the workflow
+  workflow_dispatch:  # This allows the workflow to be triggered manually
 
 jobs:
   validate-deployment-on-QA-org:
@@ -12,19 +12,19 @@ jobs:
         with:
           node-version: '14'
 
-      - name: 'Checkout source code'
+      - name: 'Checkout develop branch'
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          ref: develop  # Checkout the develop branch regardless of the commit
+          fetch-depth: 0  # Fetch the entire history to ensure we are working with the latest code
 
-      # Salesforce CLI installation and delta package creation (as before)
       - name: 'Authenticate to QA Org'
         run: sf org login sfdx-url --sfdx-url-file ./SFDX_QA_URL.txt --set-default --alias qa
 
-      - name: 'Check-only deploy delta changes - run specified tests'
+      - name: 'Check-only deploy full `force-app` folder'
         run: |
           FILE_NAME="deployment_results_$(date +'%Y-%m-%d').txt"
-          sf project deploy start --source-dir "changed-sources/force-app" --target-org qa --dry-run --verbose > $FILE_NAME
+          sf project deploy start --source-dir "force-app" --target-org qa --dry-run --verbose > $FILE_NAME
           echo "Generated file: $FILE_NAME"
         shell: bash
 
@@ -41,13 +41,13 @@ jobs:
           server_port: 587
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: Deployment Results
-          to: recipient1@example.com,recipient2@example.com,recipient3@example.com
+          subject: Deployment Results for develop branch
+          to: hv152272@gmail.com
           from: ${{ secrets.EMAIL_USERNAME }}
           body: |
             Hello,
 
-            Please find attached the deployment results from the latest workflow run.
+            Please find attached the deployment results from the latest workflow run for the develop branch.
 
             Regards,
             GitHub Actions
