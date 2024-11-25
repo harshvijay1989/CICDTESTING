@@ -1,0 +1,54 @@
+name: Validate Deployment and Email Results
+
+on:
+  workflow_dispatch:  # This allows the workflow to be triggered manually
+
+jobs:
+  validate-deployment-on-QA-org:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+
+      - name: 'Checkout develop branch'
+        uses: actions/checkout@v3
+        with:
+          ref: develop  # Checkout the develop branch regardless of the commit
+          fetch-depth: 0  # Fetch the entire history to ensure we are working with the latest code
+
+      - name: 'Authenticate to QA Org'
+        run: sf org login sfdx-url --sfdx-url-file ./SFDX_QA_URL.txt --set-default --alias qa
+
+      - name: 'Check-only deploy full `force-app` folder'
+        run: |
+          FILE_NAME="deployment_results_$(date +'%Y-%m-%d').txt"
+          sf project deploy start --source-dir "force-app" --target-org qa --dry-run --verbose > $FILE_NAME
+          echo "Generated file: $FILE_NAME"
+        shell: bash
+
+      - name: 'Upload Deployment Results'
+        uses: actions/upload-artifact@v3
+        with:
+          name: deployment-results
+          path: deployment_results_*.txt
+
+      - name: 'Send Deployment Results via Email'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.office365.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: Deployment Results for develop branch
+          to: hv152272@gmail.com
+          from: ${{ secrets.EMAIL_USERNAME }}
+          body: |
+            Hello,
+
+            Please find attached the deployment results from the latest workflow run for the develop branch.
+
+            Regards,
+            GitHub Actions
+          attachments: deployment_results_*.txt
