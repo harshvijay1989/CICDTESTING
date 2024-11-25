@@ -26,14 +26,20 @@ jobs:
           echo "$HOME/cli/sf/bin" >> $GITHUB_PATH
           ~/cli/sf/bin/sf version
           
+      - name: 'Populate auth file with SF_URL secret of QA org'
+        shell: bash
+        run: |
+          echo ${{ secrets.SFDX_QA_URL }} > ./SFDX_QA_URL.txt
+          echo "SFDX_QA_URL file created"
+
       - name: 'Authenticate to QA Org'
         run: sf org login sfdx-url --sfdx-url-file ./SFDX_QA_URL.txt --set-default --alias qa
 
       - name: 'Check-only deploy full `force-app` folder'
         run: |
-          FILE_NAME="deployment_results_$(date +'%Y-%m-%d').txt"
-          sf project deploy start --source-dir "force-app" --target-org qa --dry-run --verbose > $FILE_NAME
-          echo "Generated file: $FILE_NAME"
+          FILE_NAME="deployment_results_$(date '+%Y-%m-%d').txt"
+          sf project deploy start --source-dir "force-app" --target-org qa --dry-run --verbose > "$FILE_NAME"
+          echo "Deployment results saved to: $FILE_NAME"
         shell: bash
 
       - name: 'Upload Deployment Results'
