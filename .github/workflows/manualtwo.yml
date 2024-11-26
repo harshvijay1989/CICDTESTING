@@ -8,12 +8,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: '14'
+          node-version: 'latest'
 
       - name: 'Checkout develop branch'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: develop  # Checkout the develop branch regardless of the commit
           fetch-depth: 0  # Fetch the entire history to ensure we are working with the latest code
