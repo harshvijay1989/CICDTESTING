@@ -31,12 +31,23 @@ jobs:
         id: date
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
 
-      - name: Run Deployment Dry-Run
+      - name: Run Deployment Dry-Run with Error Capture
         id: deploy
         run: |
           FILE_NAME="deployment_results_${{ env.date }}.txt"
           echo "Using file name: $FILE_NAME"
-          sf project deploy start --source-dir "force-app" --target-org qa --dry-run --json > "$FILE_NAME"
+          
+          # Run deployment and capture both stdout and stderr
+          sf project deploy start --source-dir "force-app" --target-org qa --dry-run --json > "$FILE_NAME" 2>&1 || echo "DEPLOYMENT_FAILED" > deployment_status.txt
+          
+          # Check if deployment_status.txt exists (indicating failure)
+          if [ -f deployment_status.txt ]; then
+            echo "Deployment failed. Capturing details..."
+            echo "Deployment failed!" >> "$FILE_NAME"
+          else
+            echo "Deployment succeeded!" >> "$FILE_NAME"
+          fi
+          
           echo "Deployment results saved to: $FILE_NAME"
 
       - name: Upload Deployment Results
@@ -45,19 +56,37 @@ jobs:
           name: deployment-results
           path: deployment_results_*.txt
 
-      - name: Send Deployment Results via Gmail
+      - name: Install msmtp
+        run: |
+          sudo apt-get update
+          sudo apt-get install msmtp
+
+      - name: Configure msmtp
+        run: |
+          echo "account default" > ~/.msmtprc
+          echo "host smtp.gmail.com" >> ~/.msmtprc
+          echo "port 587" >> ~/.msmtprc
+          echo "from ${{ secrets.EMAIL_USERNAME }}" >> ~/.msmtprc
+          echo "user ${{ secrets.EMAIL_USERNAME }}" >> ~/.msmtprc
+          echo "password ${{ secrets.EMAIL_PASSWORD }}" >> ~/.msmtprc
+          echo "tls on" >> ~/.msmtprc
+          echo "tls_starttls on" >> ~/.msmtprc
+          echo "logfile ~/.msmtp.log" >> ~/.msmtprc
+          chmod 600 ~/.msmtprc
+
+      - name: Send Deployment Results via Email
         if: always()  # Ensures this step runs regardless of success or failure of the deployment
-        uses: dawidd6/action-send-mail@v4
-        with:
-          connection_url: smtp+starttls://{{ secrets.EMAIL_USERNAME }}:{{ secrets.EMAIL_PASSWORD }}@smtp.gmail.com:587
-          subject: Deployment Results for Develop Branch
-          to: harsh@crmlanding.in  # Replace with the actual recipient email(s)
-          from: "GitHub Actions <{{ secrets.EMAIL_USERNAME }}>"
-          body: |
-            Hello,
-
-            Please find attached the deployment results from the latest workflow run for the develop branch.
-
-            Regards,
-            GitHub Actions
-          attachments: deployment_results_*.txt
+        run: |
+          SUBJECT="Deployment Results for Develop Branch"
+          TO="harsh@crmlanding.in"
+          
+          # Check deployment status and adjust email body
+          if [ -f deployment_status.txt ]; then
+            BODY="Hello,\n\nThe deployment failed. Please find the details attached.\n\nRegards,\nGitHub Actions"
+          else
+            BODY="Hello,\n\nThe deployment succeeded. Please find the details attached.\n\nRegards,\nGitHub Actions"
+          fi
+          
+          ATTACHMENT="deployment_results_*.txt"
+          
+          echo -e "$BODY" | msmtp --subject="$SUBJECT" --attach="$ATTACHMENT" "$TO"
