@@ -31,5 +31,5 @@ jobs:
         run: |
           echo "Running deployment dry-run..."
           # Run the dry-run deployment and directly output results in GitHub logs
-          sf project deploy start --source-dir "force-app" --target-org qa --dry-run
+          sf project deploy start --source-dir "force-app" --target-org qa --test-level RunLocalTests  --dry-run --concise
 
