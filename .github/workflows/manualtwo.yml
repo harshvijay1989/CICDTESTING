@@ -1,24 +1,20 @@
 name: Validate Deployment and Email Results
 
 on:
-  workflow_dispatch:  # This allows the workflow to be triggered manually
+  workflow_dispatch:  # Allows the workflow to be triggered manually
 
 jobs:
-  validate-deployment-on-QA-org:
+  validate-deployment-and-send-email:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 'latest'
-
-      - name: 'Checkout develop branch'
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          ref: develop  # Checkout the develop branch regardless of the commit
+          ref: develop  # Checkout the develop branch
           fetch-depth: 0  # Fetch the entire history to ensure we are working with the latest code
 
-      - name: 'Install Salesforce CLI'
+      - name: Install Salesforce CLI
         run: |
           wget https://developer.salesforce.com/media/salesforce-cli/sf/channels/stable/sf-linux-x64.tar.xz
           mkdir -p ~/cli/sf
@@ -26,56 +22,41 @@ jobs:
           echo "$HOME/cli/sf/bin" >> $GITHUB_PATH
           ~/cli/sf/bin/sf version
 
-      - name: 'Populate auth file with SF_URL secret of QA org'
-        shell: bash
+      - name: Authenticate to QA Org
         run: |
-          echo ${{ secrets.SFDX_QA_URL }} > ./SFDX_QA_URL.txt
-          echo "SFDX_QA_URL file created"
+          echo "${{ secrets.SFDX_QA_URL }}" > ./SFDX_QA_URL.txt
+          sf org login sfdx-url --sfdx-url-file ./SFDX_QA_URL.txt --set-default --alias qa
 
-      - name: 'Authenticate to QA Org'
-        run: sf org login sfdx-url --sfdx-url-file ./SFDX_QA_URL.txt --set-default --alias qa
-
-      - name: 'Get current date'
+      - name: Get Current Date
         id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
 
-      - name: 'Dry-run deployment of `force-app`'
+      - name: Run Deployment Dry-Run
         id: deploy
         run: |
-          FILE_NAME="deployment_results_${{ steps.date.outputs.date }}.json"
+          FILE_NAME="deployment_results_${{ env.date }}.txt"
           echo "Using file name: $FILE_NAME"
           sf project deploy start --source-dir "force-app" --target-org qa --dry-run --json > "$FILE_NAME"
           echo "Deployment results saved to: $FILE_NAME"
-        shell: bash
 
-      - name: 'Convert JSON to TXT for readability'
-        run: |
-          mv deployment_results_*.json deployment_results_${{ steps.date.outputs.date }}.txt
-          echo "JSON file converted to TXT"
-
-      - name: 'Upload Deployment Results'
+      - name: Upload Deployment Results
         uses: actions/upload-artifact@v3
         with:
           name: deployment-results
           path: deployment_results_*.txt
 
-      - name: 'Send Deployment Results via Email'
-        if: always()  # Ensure this runs regardless of previous steps' success or failure
-        uses: dawidd6/action-send-mail@v3
+      - name: Send Deployment Results via Gmail
+        if: always()  # Ensures this step runs regardless of success or failure of the deployment
+        uses: dawidd6/action-send-mail@v4
         with:
-          server_address: smtp.gmail.com
-          server_port: 587
-          username: ${{ secrets.EMAIL_USERNAME }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: Deployment Results for develop branch
-          to: harsh@crmlanding.in
-          from: ${{ secrets.EMAIL_USERNAME }}
+          connection_url: smtp+starttls://{{ secrets.EMAIL_USERNAME }}:{{ secrets.EMAIL_PASSWORD }}@smtp.gmail.com:587
+          subject: Deployment Results for Develop Branch
+          to: harsh@crmlanding.in  # Replace with the actual recipient email(s)
+          from: "GitHub Actions <{{ secrets.EMAIL_USERNAME }}>"
           body: |
             Hello,
 
             Please find attached the deployment results from the latest workflow run for the develop branch.
-
-            This email is sent regardless of the deployment success or failure. Check the attached results for details.
 
             Regards,
             GitHub Actions
