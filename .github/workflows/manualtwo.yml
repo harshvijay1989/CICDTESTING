@@ -43,7 +43,7 @@ jobs:
         run: |
           FILE_NAME="deployment_results_${{ steps.date.outputs.date }}.txt"
           echo "Using file name: $FILE_NAME"
-          sf project deploy start --source-dir "force-app" --target-org qa --dry-run --verbose > "$FILE_NAME"
+          sf project deploy start --source-dir "force-app" --target-org qa --dry-run --verbose
           echo "Deployment results saved to: $FILE_NAME"
         shell: bash
 
