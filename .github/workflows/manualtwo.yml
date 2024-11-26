@@ -1,4 +1,4 @@
-name: Validate Deployment Dry-Run
+name: Validate Deployment and Display Results
 
 on:
   workflow_dispatch:  # Allows the workflow to be triggered manually
@@ -16,15 +16,20 @@ jobs:
 
       - name: Install Salesforce CLI
         run: |
-          npm install @salesforce/cli --global
-          sf version
+          wget https://developer.salesforce.com/media/salesforce-cli/sf/channels/stable/sf-linux-x64.tar.xz
+          mkdir -p ~/cli/sf
+          tar xJf sf-linux-x64.tar.xz -C ~/cli/sf --strip-components 1
+          echo "$HOME/cli/sf/bin" >> $GITHUB_PATH
+          ~/cli/sf/bin/sf version
 
       - name: Authenticate to QA Org
         run: |
           echo "${{ secrets.SFDX_QA_URL }}" > ./SFDX_QA_URL.txt
           sf org login sfdx-url --sfdx-url-file ./SFDX_QA_URL.txt --set-default --alias qa
 
-      - name: Run Deployment Dry-Run
+      - name: Run Deployment Dry-Run and Display Results
         run: |
-          echo "Starting deployment dry-run..."
+          echo "Running deployment dry-run..."
+          # Run the dry-run deployment and directly output results in GitHub logs
           sf project deploy start --source-dir "force-app" --target-org qa --dry-run
+
