@@ -39,13 +39,19 @@ jobs:
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
 
-      - name: 'Check-only deploy full `force-app` folder'
+      - name: 'Dry-run deployment of `force-app`'
+        id: deploy
         run: |
-          FILE_NAME="deployment_results_${{ steps.date.outputs.date }}.txt"
+          FILE_NAME="deployment_results_${{ steps.date.outputs.date }}.json"
           echo "Using file name: $FILE_NAME"
-          sf project deploy start --source-dir "force-app" --target-org qa --dry-run > "$FILE_NAME"
+          sf project deploy start --source-dir "force-app" --target-org qa --dry-run --json > "$FILE_NAME"
           echo "Deployment results saved to: $FILE_NAME"
         shell: bash
+
+      - name: 'Convert JSON to TXT for readability'
+        run: |
+          mv deployment_results_*.json deployment_results_${{ steps.date.outputs.date }}.txt
+          echo "JSON file converted to TXT"
 
       - name: 'Upload Deployment Results'
         uses: actions/upload-artifact@v3
@@ -54,6 +60,7 @@ jobs:
           path: deployment_results_*.txt
 
       - name: 'Send Deployment Results via Email'
+        if: always()  # Ensure this runs regardless of previous steps' success or failure
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.office365.com
@@ -67,6 +74,8 @@ jobs:
             Hello,
 
             Please find attached the deployment results from the latest workflow run for the develop branch.
+
+            This email is sent regardless of the deployment success or failure. Check the attached results for details.
 
             Regards,
             GitHub Actions
