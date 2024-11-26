@@ -63,12 +63,12 @@ jobs:
         if: always()  # Ensure this runs regardless of previous steps' success or failure
         uses: dawidd6/action-send-mail@v3
         with:
-          server_address: smtp.office365.com
+          server_address: smtp.gmail.com
           server_port: 587
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
           subject: Deployment Results for develop branch
-          to: hv152272@gmail.com
+          to: harsh@crmlanding.in
           from: ${{ secrets.EMAIL_USERNAME }}
           body: |
             Hello,
