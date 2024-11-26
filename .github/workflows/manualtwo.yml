@@ -1,10 +1,10 @@
-name: Validate Deployment and Email Results
+name: Validate Deployment Dry-Run
 
 on:
   workflow_dispatch:  # Allows the workflow to be triggered manually
 
 jobs:
-  validate-deployment-and-send-email:
+  validate-deployment:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,77 +16,15 @@ jobs:
 
       - name: Install Salesforce CLI
         run: |
-          wget https://developer.salesforce.com/media/salesforce-cli/sf/channels/stable/sf-linux-x64.tar.xz
-          mkdir -p ~/cli/sf
-          tar xJf sf-linux-x64.tar.xz -C ~/cli/sf --strip-components 1
-          echo "$HOME/cli/sf/bin" >> $GITHUB_PATH
-          ~/cli/sf/bin/sf version
+          npm install @salesforce/cli --global
+          sf version
 
       - name: Authenticate to QA Org
         run: |
           echo "${{ secrets.SFDX_QA_URL }}" > ./SFDX_QA_URL.txt
           sf org login sfdx-url --sfdx-url-file ./SFDX_QA_URL.txt --set-default --alias qa
 
-      - name: Get Current Date
-        id: date
-        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
-
-      - name: Run Deployment Dry-Run with Error Capture
-        id: deploy
+      - name: Run Deployment Dry-Run
         run: |
-          FILE_NAME="deployment_results_${{ env.date }}.txt"
-          echo "Using file name: $FILE_NAME"
-          
-          # Run deployment and capture both stdout and stderr
-          sf project deploy start --source-dir "force-app" --target-org qa --dry-run --json > "$FILE_NAME" 2>&1 || echo "DEPLOYMENT_FAILED" > deployment_status.txt
-          
-          # Check if deployment_status.txt exists (indicating failure)
-          if [ -f deployment_status.txt ]; then
-            echo "Deployment failed. Capturing details..."
-            echo "Deployment failed!" >> "$FILE_NAME"
-          else
-            echo "Deployment succeeded!" >> "$FILE_NAME"
-          fi
-          
-          echo "Deployment results saved to: $FILE_NAME"
-
-      - name: Upload Deployment Results
-        uses: actions/upload-artifact@v3
-        with:
-          name: deployment-results
-          path: deployment_results_*.txt
-
-      - name: Install msmtp
-        run: |
-          sudo apt-get update
-          sudo apt-get install msmtp
-
-      - name: Configure msmtp
-        run: |
-          echo "account default" > ~/.msmtprc
-          echo "host smtp.gmail.com" >> ~/.msmtprc
-          echo "port 587" >> ~/.msmtprc
-          echo "from ${{ secrets.EMAIL_USERNAME }}" >> ~/.msmtprc
-          echo "user ${{ secrets.EMAIL_USERNAME }}" >> ~/.msmtprc
-          echo "password ${{ secrets.EMAIL_PASSWORD }}" >> ~/.msmtprc
-          echo "tls on" >> ~/.msmtprc
-          echo "tls_starttls on" >> ~/.msmtprc
-          echo "logfile ~/.msmtp.log" >> ~/.msmtprc
-          chmod 600 ~/.msmtprc
-
-      - name: Send Deployment Results via Email
-        if: always()  # Ensures this step runs regardless of success or failure of the deployment
-        run: |
-          SUBJECT="Deployment Results for Develop Branch"
-          TO="harsh@crmlanding.in"
-          
-          # Check deployment status and adjust email body
-          if [ -f deployment_status.txt ]; then
-            BODY="Hello,\n\nThe deployment failed. Please find the details attached.\n\nRegards,\nGitHub Actions"
-          else
-            BODY="Hello,\n\nThe deployment succeeded. Please find the details attached.\n\nRegards,\nGitHub Actions"
-          fi
-          
-          ATTACHMENT="deployment_results_*.txt"
-          
-          echo -e "$BODY" | msmtp --subject="$SUBJECT" --attach="$ATTACHMENT" "$TO"
+          echo "Starting deployment dry-run..."
+          sf project deploy start --source-dir "force-app" --target-org qa --dry-run
