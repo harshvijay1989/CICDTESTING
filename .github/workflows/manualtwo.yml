@@ -8,12 +8,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout the Code
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           ref: develop  # Checkout the develop branch
           fetch-depth: 0  # Fetch the entire history to ensure we are working with the latest code
 
+      # Step 2: Install Salesforce CLI
       - name: Install Salesforce CLI
         run: |
           wget https://developer.salesforce.com/media/salesforce-cli/sf/channels/stable/sf-linux-x64.tar.xz
@@ -22,14 +24,26 @@ jobs:
           echo "$HOME/cli/sf/bin" >> $GITHUB_PATH
           ~/cli/sf/bin/sf version
 
+      # Step 3: Install Salesforce CLI Scanner
+      - name: Install Salesforce CLI Scanner
+        run: |
+          npm install @salesforce/sfdx-scanner --global
+          sf scanner --version
+
+      # Step 4: Run Salesforce Scanner (Before Deployment)
+      - name: Run Code Quality Scan
+        run: |
+          echo "Running Salesforce Scanner for code quality..."
+          sf scanner run --format table --target './**/*.cls' --category "Design,Best Practices,Performance" --severity-threshold 1
+
+      # Step 6: Authenticate to QA Org
       - name: Authenticate to QA Org
         run: |
           echo "${{ secrets.SFDX_QA_URL }}" > ./SFDX_QA_URL.txt
           sf org login sfdx-url --sfdx-url-file ./SFDX_QA_URL.txt --set-default --alias qa
 
+      # Step 7: Run Deployment Dry-Run and Display Results
       - name: Run Deployment Dry-Run and Display Results
         run: |
           echo "Running deployment dry-run..."
-          # Run the dry-run deployment and directly output results in GitHub logs
-          sf project deploy start --source-dir "force-app" --target-org qa --test-level RunLocalTests  --dry-run --concise
-
+          sf project deploy start --source-dir "force-app" --target-org qa --test-level RunLocalTests --dry-run --concise
