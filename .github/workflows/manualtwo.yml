@@ -28,7 +28,7 @@ jobs:
       - name: Install Salesforce CLI Scanner
         run: |
           sf plugins install @salesforce/sfdx-scanner
-          sf scanner --version
+          sf plugins --core
 
       # Step 4: Run Salesforce Scanner (Before Deployment)
       - name: Run Code Quality Scan
