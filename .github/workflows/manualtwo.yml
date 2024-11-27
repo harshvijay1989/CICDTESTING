@@ -27,7 +27,7 @@ jobs:
       # Step 3: Install Salesforce CLI Scanner
       - name: Install Salesforce CLI Scanner
         run: |
-          npm install @salesforce/sfdx-scanner --global
+          sf plugins install @salesforce/sfdx-scanner
           sf scanner --version
 
       # Step 4: Run Salesforce Scanner (Before Deployment)
